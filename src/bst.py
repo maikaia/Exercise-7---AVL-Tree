@@ -21,21 +21,32 @@ class BST(bt.BT):
         Returns true if the value `v` is a member of the tree.
         '''
         logging.info("TODO@src/bst.py: implement is_member()")
+        if self.is_empty() : return False
+        if self.value() == v : return True
+        if v < self.value() : return self.lc().is_member(v)
+        if v > self.value() : return self.rc().is_member(v)
         return False
 
     def size(self):
         '''
         Returns the number of nodes in the tree.
         '''
-        size = self.value()
-
-        logging.info("TODO@src/bst.py: implement size()")
+        size = 0
+        if self.value() : size+=1
+        if self._left_child : size += self._left_child.size()
+        if self._right_child : size += self._right_child.size()
         return size
 
     def height(self):
         '''
         Returns the height of the tree.
         '''
+        height = 0
+        if self.is_empty(): 
+            return 0 
+        else: 
+            
+
         logging.info("TODO@src/bst.py: implement height()")
         return 0
 
@@ -76,8 +87,12 @@ class BST(bt.BT):
         The output of t.bfs_order_star() should be:
         [ 10, 5, 15, None, None, None, 20 ]
         '''
-        log.info("TODO@src/bst.py: implement bfs_order_star()")
-        return []
+        list = []
+        if self.is_empty():
+            return []
+        list.append(self.value())
+        
+        return list + self.lc().bfs_order_star() + self.rc().bfs_order_star()
 
     def add(self, v):
         '''

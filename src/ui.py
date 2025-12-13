@@ -179,6 +179,7 @@ class TerminalUI:
         Shows a pretty 2D tree based on the output of bfs_order_star(). None
         values are are replaced by stars ("*").
         '''
+        
         log.info("TODO@src/ui.py: implement show_2d() using bfs_order_star()")
 
 if __name__ == "__main__":
