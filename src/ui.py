@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Nils-Olov Olsson, Samuel Grafström
+
 import bst
 import avl
 import logging
@@ -8,9 +10,6 @@ log = logging.getLogger(__name__)
 
 class TerminalUI:
     def __init__(self, mode):
-        '''
-        Select BST mode by passing "bst" as argument; otherwise select AVL mode.
-        '''
         if mode == "bst":
             logging.info("running in BST mode")
             self._tree = bst.BST()
@@ -19,9 +18,6 @@ class TerminalUI:
             self._tree = avl.AVL()
 
     def run(self):
-        '''
-        Provides a terminal-based UI to perform tree operations.
-        '''
         self.display_menu()
         while True:
             opt, err = self.get_choice()
@@ -46,24 +42,15 @@ class TerminalUI:
                 return 1
 
     def display_menu(self):
-        '''
-        Shows a menu which is encapsulated between a top rule and a bottom rule.
-        '''
         print(self.menu_rule("top", self.menu_width()))
         for opt in self.menu_options():
             print("\t{}".format(opt))
         print(self.menu_rule("bot", self.menu_width()))
 
     def display_error(self, err):
-        '''
-        Shows an error message.
-        '''
         print("error> {}".format(err))
 
     def display_tree(self):
-        '''
-        Shows the tree's structure and content.
-        '''
         if self._tree.is_empty():
             print("\n  Tree is empty\n")
             return
@@ -81,9 +68,6 @@ class TerminalUI:
         print("")
 
     def add_value(self):
-        '''add_value:
-        Prompts the user for an integer which is added to the tree.
-        '''
         value, err = self.get_int("Enter value to be added")
         if err is not None:
             self.display_error(err)
@@ -91,9 +75,6 @@ class TerminalUI:
         self._tree = self._tree.add(value)
 
     def delete_value(self):
-        '''delete_value:
-        Prompts the user for an integer which is removed from the tree.
-        '''
         value, err = self.get_int("Enter value to be deleted")
         if err is not None:
             self.display_error(err)
@@ -101,9 +82,6 @@ class TerminalUI:
         self._tree = self._tree.delete(value)
 
     def is_member(self):
-        '''is_member:
-        Prompts the user for a value that is checked for membership in the tree.
-        '''
         value, err = self.get_int("Enter search value")
         if err is not None:
             self.display_error(err)
@@ -115,22 +93,12 @@ class TerminalUI:
         )
 
     def menu_rule(self, pos, width):
-        '''
-        Returns a horizontal line using stars or tildes.
-        '''
         return ("*" if pos == "top" else "~") * width
 
     def menu_width(self):
-        '''
-        Returns the menu width.
-        '''
         return 32
 
     def menu_options(self):
-        '''
-        Returns a list of printable menu options.  Blank entries will be interpreted
-        as new lines, and single characters before the colon as hotkeys.
-        '''
         return [
             "m: menu",
             "t: display tree",
@@ -143,17 +111,10 @@ class TerminalUI:
         ]
 
     def menu_hotkeys(self):
-        '''
-        Returns a list of symbols that the menu defined as valid hotkeys.
-        '''
         opts = self.menu_options()
         return [ o.split(":")[0] for o in opts if len(o.split(":")[0]) == 1 ]
 
     def get_choice(self):
-        '''
-        Attempts to read a valid menu option from the user.  Caller should look
-        for errors by comparing the second return value against ``not None''.
-        '''
         buf = input("menu> ")
         if len(buf) != 1:
             return None, "input must be a a single character"
@@ -163,9 +124,6 @@ class TerminalUI:
         return buf[0], None
 
     def get_int(self, message):
-        '''
-        Writes a message to stdout and waits for an integer from stdin.
-        '''
         buf = input("{}> ".format(message))
         try:
             buf = int(buf)
@@ -175,12 +133,61 @@ class TerminalUI:
             return None, "invalid input (not an integer)"
 
     def show_2d(self):
-        '''
-        Shows a pretty 2D tree based on the output of bfs_order_star(). None
-        values are are replaced by stars ("*").
-        '''
-        
-        log.info("TODO@src/ui.py: implement show_2d() using bfs_order_star()")
+        bfs_list = self._tree.bfs_order_star()
+        height = self._tree.height()
+
+        if height == 0:
+            print("")
+            return
+
+        # convert values to strings, replacing None by "*"
+        tokens = []
+        for i in bfs_list:
+            if i is None:
+                tokens.append("*")
+            else:
+                tokens.append(str(i))
+
+        if len(tokens) == 0:
+            print("")
+            return
+
+        # figure out cell width
+        max_len = 0
+        for t in tokens:
+            if len(t) > max_len:
+                max_len = len(t)
+        cell = max_len + 2
+
+        i = 0
+        level = 0
+        while level < height:
+            count = 2 ** level
+
+            # spaces before first node on the level
+            first = (2 ** (height - level - 1) - 1) * cell
+            # spaces between nodes on the level
+            between = (2 ** (height - level) - 1) * cell
+
+            line = " " * first
+
+            j = 0
+            while j < count:
+                if i < len(tokens):
+                    item = tokens[i]
+                else:
+                    item = "*"
+
+                line += item.center(cell)
+
+                if j != count - 1:
+                    line += " " * between
+
+                i += 1
+                j += 1
+
+            print(line.rstrip())
+            level += 1
 
 if __name__ == "__main__":
     logging.critical("ui contains no main module")

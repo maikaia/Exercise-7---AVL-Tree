@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# Nils-Olov Olsson, Samuel Grafström
+
 import bt
 import sys
 import logging
@@ -8,38 +10,26 @@ log = logging.getLogger(__name__)
 
 class BST(bt.BT):
     def __init__(self, value=None):
-        '''
-        Initializes an empty tree if `value` is None, else a root with the
-        specified `value` and two empty children.
-        '''
         self.set_value(value)
         if not self.is_empty():
             self.cons(BST(), BST())
 
     def is_member(self, v):
-        '''
-        Returns true if the value `v` is a member of the tree.
-        '''
-        if self.is_empty() : return False
-        if self.value() == v : return True
-        if v < self.value() : return self.lc().is_member(v)
-        if v > self.value() : return self.rc().is_member(v)
-        return False
+        if self.is_empty():
+            return False
+        if v == self.value():
+            return True
+        if v < self.value():
+            return self.lc().is_member(v)
+        else:
+            return self.rc().is_member(v)
 
     def size(self):
-        '''
-        Returns the number of nodes in the tree.
-        '''
-        size = 0
-        if self.value() : size+=1
-        if self._left_child : size += self._left_child.size()
-        if self._right_child : size += self._right_child.size()
-        return size
+        if self.is_empty():
+            return 0
+        return 1 + self.lc().size() + self.rc().size()
 
     def height(self):
-        '''
-        Returns the height of the tree.
-        '''
         height = 0
         if self.is_empty(): 
             return 0
@@ -50,64 +40,45 @@ class BST(bt.BT):
         return height
 
     def preorder(self):
-        '''
-        Returns a list of all members in preorder.
-        '''
         if self.is_empty():
             return []
         return [self.value()] + self.lc().preorder() + self.rc().preorder()
 
     def inorder(self):
-        '''
-        Returns a list of all members in inorder.
-        '''
         if self.is_empty():
             return []
         return self.lc().inorder() + [self.value()] + self.rc().inorder()
 
     def postorder(self):
-        '''
-        Returns a list of all members in postorder.
-        '''
         if self.is_empty():
             return []
         return self.lc().postorder() + self.rc().postorder() + [self.value()]
 
     def bfs_order_star(self):
-        '''
-        Returns a list of all members in breadth-first search* order, which
-        means that empty nodes are denoted by "stars" (here the value None).
+        if self.is_empty():
+            return []
 
-        For example, consider the following tree `t`:
-                    10
-              5           15
-           *     *     *     20
-
-        The output of t.bfs_order_star() should be:
-        [ 10, 5, 15, None, None, None, 20 ]
-        '''
-        queue = [self]
-        list = []
-
-        while queue:
-            node = queue.pop(0)
-            if node.is_empty():
-                list.append(None)
+        height = self.height()
+        out = []
+        # queue items are (node, level)
+        queue = [(self, 1)]
+        while len(queue) > 0:
+            node, lvl = queue.pop(0)
+            if node is None or node.is_empty():
+                out.append(None)
+                if lvl < height:
+                    # keep expanding placeholders until we reach the last level
+                    queue.append((self.__class__(), lvl + 1))
+                    queue.append((self.__class__(), lvl + 1))
             else:
-                list.append(node.value())
-                queue.append(node.lc())
-                queue.append(node.rc())
-        
-        while list and list[-1] is None:
-            list.pop()
-
-        return list
+                out.append(node.value())
+                if lvl < height:
+                    # enqueue children
+                    queue.append((node.lc() if node.lc() is not None else self.__class__(), lvl + 1))
+                    queue.append((node.rc() if node.rc() is not None else self.__class__(), lvl + 1))
+        return out
     
     def add(self, v):
-        '''
-        Adds the value `v` and returns the new (updated) tree.  If `v` is
-        already a member, the same tree is returned without any modification.
-        '''
         if self.is_empty():
             self.__init__(value=v)
             return self
@@ -117,14 +88,56 @@ class BST(bt.BT):
             return self.cons(self.lc(), self.rc().add(v))
         return self
     
-    def delete(self, v):
-        '''
-        Removes the value `v` from the tree and returns the new (updated) tree.
-        If `v` is a non-member, the same tree is returned without modification.
-        '''
-        log.info("TODO@src/bst.py: implement delete()")
-        return self
+    def _min_value(self):
+        node = self
+        while node is not None and not node.is_empty() and node.lc() is not None and not node.lc().is_empty():
+            node = node.lc()
+        return node.value()
 
+    def _max_value(self):
+        node = self
+        while node is not None and not node.is_empty() and node.rc() is not None and not node.rc().is_empty():
+            node = node.rc()
+        return node.value()
+
+    def delete(self, v):
+        if self.is_empty():
+            return self
+
+        if v < self.value():
+            return self.cons(self.lc().delete(v), self.rc())
+        if v > self.value():
+            return self.cons(self.lc(), self.rc().delete(v))
+
+        # v == self.value(): delete this node
+        left_empty = (self.lc() is None) or self.lc().is_empty()
+        right_empty = (self.rc() is None) or self.rc().is_empty()
+
+        # no children
+        if left_empty and right_empty:
+            return self.__class__()
+
+        # one child
+        if left_empty and not right_empty:
+            return self.rc()
+        if right_empty and not left_empty:
+            return self.lc()
+
+        # two children: pick replacement to avoid making it more unbalanced
+        left_height = self.lc().height()
+        right_height = self.rc().height()
+
+        if left_height >= right_height:
+            # use predecessor (max of left subtree)
+            rep = self.lc()._max_value()
+            new_lc = self.lc().delete(rep)
+            return self.set_value(rep).cons(new_lc, self.rc())
+        else:
+            # use successor (min of right subtree)
+            rep = self.rc()._min_value()
+            new_rc = self.rc().delete(rep)
+            return self.set_value(rep).cons(self.lc(), new_rc)
+        
 if __name__ == "__main__":
     log.critical("module contains no main module")
     sys.exit(1)
