@@ -110,8 +110,8 @@ class BST(bt.BT):
             return self.cons(self.lc(), self.rc().delete(v))
 
         # v == self.value(): delete this node
-        left_empty = (self.lc() is None) or self.lc().is_empty()
-        right_empty = (self.rc() is None) or self.rc().is_empty()
+        left_empty = self.lc().is_empty()
+        right_empty = self.rc().is_empty()
 
         # no children
         if left_empty and right_empty:
