@@ -20,7 +20,6 @@ class BST(bt.BT):
         '''
         Returns true if the value `v` is a member of the tree.
         '''
-        logging.info("TODO@src/bst.py: implement is_member()")
         if self.is_empty() : return False
         if self.value() == v : return True
         if v < self.value() : return self.lc().is_member(v)
@@ -43,12 +42,12 @@ class BST(bt.BT):
         '''
         height = 0
         if self.is_empty(): 
-            return 0 
+            return 0
         else: 
-            
-
-        logging.info("TODO@src/bst.py: implement height()")
-        return 0
+            left_height = self.lc().height()
+            right_height = self.rc().height()
+            height = max(left_height, right_height) + 1
+        return height
 
     def preorder(self):
         '''
@@ -87,13 +86,23 @@ class BST(bt.BT):
         The output of t.bfs_order_star() should be:
         [ 10, 5, 15, None, None, None, 20 ]
         '''
+        queue = [self]
         list = []
-        if self.is_empty():
-            return []
-        list.append(self.value())
-        
-        return list + self.lc().bfs_order_star() + self.rc().bfs_order_star()
 
+        while queue:
+            node = queue.pop(0)
+            if node.is_empty():
+                list.append(None)
+            else:
+                list.append(node.value())
+                queue.append(node.lc())
+                queue.append(node.rc())
+        
+        while list and list[-1] is None:
+            list.pop()
+
+        return list
+    
     def add(self, v):
         '''
         Adds the value `v` and returns the new (updated) tree.  If `v` is
